@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# GNOME schema build output
+extension/schemas/gschemas.compiled
+
+# Local runtime logs/state
+*.log
+.cache/
+.local/
+
+# Editor/OS noise
+.DS_Store
+.idea/
+.vscode/

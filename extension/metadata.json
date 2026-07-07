@@ -1,0 +1,8 @@
+{
+  "uuid": "onevex-whisper@local",
+  "name": "OneVex Whisper",
+  "description": "Shows a rectangle with Ctrl+Space and types text through a Python helper.",
+  "shell-version": ["50"],
+  "settings-schema": "org.gnome.shell.extensions.onevex-whisper",
+  "version": 1
+}

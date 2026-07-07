@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.onevex-whisper"
+          path="/org/gnome/shell/extensions/onevex-whisper/">
+
+    <key name="show-rectangle" type="as">
+      <default>["&lt;Control&gt;space"]</default>
+      <summary>Show rectangle and type text</summary>
+      <description>Keyboard shortcut used to show the rectangle overlay and start text insertion.</description>
+    </key>
+
+  </schema>
+</schemalist>
