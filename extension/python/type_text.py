@@ -84,7 +84,7 @@ def run_ydotool(args: list[str]) -> None:
         raise RuntimeError(message)
 
 
-def type_text(text: str, key_delay_ms: int) -> None:
+def type_text(text: str, key_delay_ms: int = DEFAULT_KEY_DELAY_MS) -> None:
     run_ydotool(["key", *KEY_UP_EVENTS])
     run_ydotool(["type", "--key-delay", str(key_delay_ms), "--", text])
 
