@@ -1,7 +1,7 @@
 # OneVex Whisper GNOME Extension
 
 OneVex Whisper is a small GNOME Shell extension for Fedora GNOME 50 on Wayland.
-Press `Ctrl+Space` to show a red rectangle overlay and run a Python helper that types `This is my text` into the currently focused field. Press `Ctrl+Space` again to hide the rectangle.
+Press `Ctrl+Space` to show a red rectangle overlay and start recording from the microphone. Press `Ctrl+Space` again to hide the rectangle, stop recording, transcribe the speech with Whisper, and type the spoken text into the currently focused field.
 
 The rectangle keeps the same visual values as the sample project:
 
@@ -39,6 +39,47 @@ The helper intentionally waits briefly and releases common modifier keys before 
 
 The rectangle can still appear without `ydotool`, but text insertion will fail and the Python helper will log the error to `~/.local/state/onevex-whisper/text-injector.log`.
 
+## Speech To Text Dependencies
+
+This project expects a local `whisper.cpp` command-line binary and a local GGML model.
+
+The model path used by default is:
+
+```text
+models/ggml-small.bin
+```
+
+The helper searches for the Whisper CLI in this order:
+
+- `ONEVEX_WHISPER_CLI`, if set
+- `whisper-cli` in `PATH`
+- `whisper-cpp` in `PATH`
+- `~/dev/whisper.cpp/build/bin/whisper-cli`
+- `~/dev/whisper.cpp/build/bin/main`
+- `~/dev/whisper.cpp/main`
+
+If you need to build `whisper.cpp`:
+
+```bash
+git clone https://github.com/ggerganov/whisper.cpp ~/dev/whisper.cpp
+cmake -S ~/dev/whisper.cpp -B ~/dev/whisper.cpp/build
+cmake --build ~/dev/whisper.cpp/build -j
+```
+
+Audio recording uses `pw-record`, which is usually available through PipeWire tools on Fedora:
+
+```bash
+sudo dnf install pipewire-utils
+```
+
+Runtime logs are written to:
+
+```text
+~/.local/state/onevex-whisper/voice-input.log
+~/.local/state/onevex-whisper/recorder.log
+~/.local/state/onevex-whisper/text-injector.log
+```
+
 ## Project Layout
 
 ```text
@@ -46,7 +87,10 @@ extension/
   extension.js
   metadata.json
   python/type_text.py
+  python/voice_input.py
   schemas/org.gnome.shell.extensions.onevex-whisper.gschema.xml
+models/
+  ggml-small.bin
 scripts/
   deploy-dev.sh
 ```
@@ -138,12 +182,18 @@ To remove the optional system `ydotoold` service created by this project:
 ./scripts/uninstall-ydotoold-system-service.sh
 ```
 
-## Manual Text Helper Test
+## Manual Voice Helper Test
 
-Focus a text field, then run:
+Start recording:
 
 ```bash
-python3 extension/python/type_text.py --text "This is my text"
+python3 extension/python/voice_input.py start
 ```
 
-If this fails, fix `ydotool` or `ydotoold` before debugging the GNOME extension.
+Speak into the microphone, focus a text field, then stop, transcribe, and type:
+
+```bash
+python3 extension/python/voice_input.py stop-transcribe-type
+```
+
+If recording works but typing fails, fix `ydotool` or `ydotoold` before debugging the GNOME extension.

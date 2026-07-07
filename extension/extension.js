@@ -7,7 +7,6 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 const KEYBINDING_NAME = 'show-rectangle';
-const TEXT_TO_TYPE = 'This is my text';
 
 const RECTANGLE_WIDTH = 100;
 const RECTANGLE_HEIGHT = 30;
@@ -51,6 +50,9 @@ export default class OneVexWhisperExtension extends Extension {
     disable() {
         Main.wm.removeKeybinding(KEYBINDING_NAME);
 
+        if (this._rectangle && this._rectangle.visible)
+            this._runVoiceCommand('cancel');
+
         if (this._monitorsChangedId) {
             Main.layoutManager.disconnect(this._monitorsChangedId);
             this._monitorsChangedId = 0;
@@ -68,7 +70,9 @@ export default class OneVexWhisperExtension extends Extension {
         const isVisible = this._toggleRectangle();
 
         if (isVisible)
-            this._runTextInjector();
+            this._runVoiceCommand('start');
+        else
+            this._runVoiceCommand('stop-transcribe-type');
     }
 
     _toggleRectangle() {
@@ -92,28 +96,28 @@ export default class OneVexWhisperExtension extends Extension {
         this._rectangle.set_position(x, y);
     }
 
-    _runTextInjector() {
+    _runVoiceCommand(command) {
         const scriptPath = GLib.build_filenamev([
             this.path,
             'python',
-            'type_text.py',
+            'voice_input.py',
         ]);
 
         if (!GLib.file_test(scriptPath, GLib.FileTest.IS_REGULAR)) {
-            console.error(`OneVex Whisper: missing text injector: ${scriptPath}`);
+            console.error(`OneVex Whisper: missing voice input helper: ${scriptPath}`);
             return;
         }
 
         try {
             GLib.spawn_async(
                 this.path,
-                ['python3', scriptPath, '--text', TEXT_TO_TYPE],
+                ['python3', scriptPath, command],
                 null,
                 GLib.SpawnFlags.SEARCH_PATH,
                 null
             );
         } catch (error) {
-            console.error(`OneVex Whisper: failed to run text injector: ${error.message}`);
+            console.error(`OneVex Whisper: failed to run voice input helper: ${error.message}`);
         }
     }
 }
