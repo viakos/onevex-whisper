@@ -1,13 +1,13 @@
 # OneVex Whisper GNOME Extension
 
 OneVex Whisper is a small GNOME Shell extension for Fedora GNOME 50 on Wayland.
-Press `Ctrl+Space` to show a red rectangle overlay and start recording from the microphone. Press `Ctrl+Space` again to hide the rectangle, stop recording, transcribe the speech with Whisper, and type the spoken text into the currently focused field.
+Press `Ctrl+Space` to show a blinking red recording indicator and start recording from the microphone. Press `Ctrl+Space` again to hide the indicator, stop recording, transcribe the speech with Whisper, and type the spoken text into the currently focused field.
 
-The rectangle keeps the same visual values as the sample project:
+The recording indicator is shown near the bottom center of the primary monitor:
 
-- Size: `100 x 30`
-- Position: centered horizontally on the primary monitor, `40px` above the bottom edge
-- Style: `rgba(255, 0, 0, 0.65)`, `2px` white border, `6px` border radius
+- Size: `14 x 14`
+- Position: centered horizontally, `40px` above the bottom edge
+- Style: blinking red circle
 
 ## Important Wayland Note
 
@@ -37,7 +37,7 @@ The Python helper sets `YDOTOOL_SOCKET=/run/onevex-whisper/ydotool_socket` when 
 
 The helper intentionally waits briefly and releases common modifier keys before typing. Without this, the `Ctrl+Space` trigger can leave `Ctrl` active for the first generated characters, causing text such as `This is my text` to be interpreted as shortcuts like `Ctrl+S` instead of plain text.
 
-The rectangle can still appear without `ydotool`, but text insertion will fail and the Python helper will log the error to `~/.local/state/onevex-whisper/text-injector.log`.
+The recording indicator can still appear without `ydotool`, but text insertion will fail and the Python helper will log the error to `~/.local/state/onevex-whisper/text-injector.log`.
 
 ## Speech To Text Dependencies
 

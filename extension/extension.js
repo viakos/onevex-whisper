@@ -2,20 +2,20 @@ import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 import St from 'gi://St';
+import Clutter from 'gi://Clutter';
 
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 const KEYBINDING_NAME = 'show-rectangle';
 
-const RECTANGLE_WIDTH = 100;
-const RECTANGLE_HEIGHT = 30;
-const RECTANGLE_MARGIN_BOTTOM = 40;
+const RECORDING_DOT_SIZE = 14;
+const RECORDING_DOT_MARGIN_BOTTOM = 40;
+const BLINK_DURATION_MS = 650;
 
-const RECTANGLE_STYLE = `
-    background-color: rgba(255, 0, 0, 0.65);
-    border: 2px solid white;
-    border-radius: 6px;
+const RECORDING_DOT_STYLE = `
+    background-color: rgba(255, 0, 0, 0.95);
+    border-radius: 999px;
 `;
 
 export default class OneVexWhisperExtension extends Extension {
@@ -23,19 +23,20 @@ export default class OneVexWhisperExtension extends Extension {
         this._settings = this.getSettings();
         this._monitorsChangedId = 0;
 
-        this._rectangle = new St.Widget({
+        this._recordingDot = new St.Widget({
             reactive: false,
-            style: RECTANGLE_STYLE,
+            style: RECORDING_DOT_STYLE,
             visible: false,
+            y_align: Clutter.ActorAlign.CENTER,
         });
-        this._rectangle.set_size(RECTANGLE_WIDTH, RECTANGLE_HEIGHT);
+        this._recordingDot.set_size(RECORDING_DOT_SIZE, RECORDING_DOT_SIZE);
 
-        Main.uiGroup.add_child(this._rectangle);
-        this._positionRectangle();
+        Main.uiGroup.add_child(this._recordingDot);
+        this._positionRecordingDot();
 
         this._monitorsChangedId = Main.layoutManager.connect(
             'monitors-changed',
-            () => this._positionRectangle()
+            () => this._positionRecordingDot()
         );
 
         Main.wm.addKeybinding(
@@ -50,7 +51,7 @@ export default class OneVexWhisperExtension extends Extension {
     disable() {
         Main.wm.removeKeybinding(KEYBINDING_NAME);
 
-        if (this._rectangle && this._rectangle.visible)
+        if (this._recordingDot && this._recordingDot.visible)
             this._runVoiceCommand('cancel');
 
         if (this._monitorsChangedId) {
@@ -58,9 +59,11 @@ export default class OneVexWhisperExtension extends Extension {
             this._monitorsChangedId = 0;
         }
 
-        if (this._rectangle) {
-            this._rectangle.destroy();
-            this._rectangle = null;
+        this._stopBlinkingDot();
+
+        if (this._recordingDot) {
+            this._recordingDot.destroy();
+            this._recordingDot = null;
         }
 
         this._settings = null;
@@ -76,24 +79,59 @@ export default class OneVexWhisperExtension extends Extension {
     }
 
     _toggleRectangle() {
-        if (!this._rectangle)
+        if (!this._recordingDot)
             return false;
 
-        this._positionRectangle();
-        this._rectangle.visible = !this._rectangle.visible;
+        this._positionRecordingDot();
+        this._recordingDot.visible = !this._recordingDot.visible;
 
-        return this._rectangle.visible;
+        if (this._recordingDot.visible)
+            this._startBlinkingDot();
+        else
+            this._stopBlinkingDot();
+
+        return this._recordingDot.visible;
     }
 
-    _positionRectangle() {
-        if (!this._rectangle)
+    _startBlinkingDot() {
+        if (!this._recordingDot)
+            return;
+
+        this._recordingDot.opacity = 255;
+        this._blinkRecordingDot();
+    }
+
+    _blinkRecordingDot() {
+        if (!this._recordingDot || !this._recordingDot.visible)
+            return;
+
+        const targetOpacity = this._recordingDot.opacity > 128 ? 70 : 255;
+
+        this._recordingDot.ease({
+            opacity: targetOpacity,
+            duration: BLINK_DURATION_MS,
+            mode: Clutter.AnimationMode.EASE_IN_OUT_SINE,
+            onComplete: () => this._blinkRecordingDot(),
+        });
+    }
+
+    _stopBlinkingDot() {
+        if (!this._recordingDot)
+            return;
+
+        this._recordingDot.remove_all_transitions();
+        this._recordingDot.opacity = 255;
+    }
+
+    _positionRecordingDot() {
+        if (!this._recordingDot)
             return;
 
         const monitor = Main.layoutManager.primaryMonitor;
-        const x = monitor.x + Math.floor((monitor.width - RECTANGLE_WIDTH) / 2);
-        const y = monitor.y + monitor.height - RECTANGLE_HEIGHT - RECTANGLE_MARGIN_BOTTOM;
+        const x = monitor.x + Math.floor((monitor.width - RECORDING_DOT_SIZE) / 2);
+        const y = monitor.y + monitor.height - RECORDING_DOT_SIZE - RECORDING_DOT_MARGIN_BOTTOM;
 
-        this._rectangle.set_position(x, y);
+        this._recordingDot.set_position(x, y);
     }
 
     _runVoiceCommand(command) {
