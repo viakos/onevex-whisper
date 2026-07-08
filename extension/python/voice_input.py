@@ -161,9 +161,8 @@ def find_whisper_cli(explicit_path: str | None) -> str:
 
     home = Path.home()
     for path in [
-        home / "dev" / "whisper.cpp" / "build" / "bin" / "whisper-cli",
-        home / "dev" / "whisper.cpp" / "build" / "bin" / "main",
-        home / "dev" / "whisper.cpp" / "main",
+        home / ".local" / "opt" / "whisper.cpp" / "build" / "bin" / "whisper-cli",
+        home / ".local" / "opt" / "whisper.cpp" / "build" / "bin" / "main",
     ]:
         if path.is_file():
             return str(path)
@@ -183,6 +182,11 @@ def transcribe_audio(model_path: Path, whisper_cli: str | None) -> str:
 
     TRANSCRIPT_FILE.unlink(missing_ok=True)
     cli_path = find_whisper_cli(whisper_cli)
+    cli_dir = str(Path(cli_path).resolve().parent)
+    env = {**os.environ}
+    env["LD_LIBRARY_PATH"] = ":".join(
+        value for value in [cli_dir, env.get("LD_LIBRARY_PATH")] if value
+    )
 
     result = subprocess.run(
         [
@@ -198,6 +202,7 @@ def transcribe_audio(model_path: Path, whisper_cli: str | None) -> str:
         ],
         check=False,
         capture_output=True,
+        env=env,
         text=True,
     )
 

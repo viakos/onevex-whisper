@@ -54,16 +54,17 @@ The helper searches for the Whisper CLI in this order:
 - `ONEVEX_WHISPER_CLI`, if set
 - `whisper-cli` in `PATH`
 - `whisper-cpp` in `PATH`
-- `~/dev/whisper.cpp/build/bin/whisper-cli`
-- `~/dev/whisper.cpp/build/bin/main`
-- `~/dev/whisper.cpp/main`
+- `~/.local/opt/whisper.cpp/build/bin/whisper-cli`
+- `~/.local/opt/whisper.cpp/build/bin/main`
+
+When launching `whisper-cli`, the helper also adds the CLI directory to `LD_LIBRARY_PATH`. This lets a local `whisper.cpp` build find shared libraries such as `libwhisper.so.1` after being moved to `~/.local/opt/whisper.cpp`.
 
 If you need to build `whisper.cpp`:
 
 ```bash
-git clone https://github.com/ggerganov/whisper.cpp ~/dev/whisper.cpp
-cmake -S ~/dev/whisper.cpp -B ~/dev/whisper.cpp/build
-cmake --build ~/dev/whisper.cpp/build -j
+git clone https://github.com/ggerganov/whisper.cpp ~/.local/opt/whisper.cpp
+cmake -S ~/.local/opt/whisper.cpp -B ~/.local/opt/whisper.cpp/build
+cmake --build ~/.local/opt/whisper.cpp/build -j
 ```
 
 Audio recording uses `pw-record`, which is usually available through PipeWire tools on Fedora:
