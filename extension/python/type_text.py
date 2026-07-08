@@ -16,6 +16,7 @@ DEFAULT_DELAY_SECONDS = 0.65
 DEFAULT_KEY_DELAY_MS = 12
 YDOTOOL_SOCKET = "/run/onevex-whisper/ydotool_socket"
 LOG_FILE = Path.home() / ".local" / "state" / "onevex-whisper" / "text-injector.log"
+PASTE_SETTLE_SECONDS = 0.2
 
 # Linux input-event key codes for modifier keys and Space. Releasing them before
 # typing prevents the trigger shortcut from turning text into Ctrl-based actions.
@@ -29,6 +30,12 @@ KEY_UP_EVENTS = [
     "125:0",  # KEY_LEFTMETA
     "126:0",  # KEY_RIGHTMETA
     "57:0",   # KEY_SPACE
+]
+PASTE_KEY_EVENTS = [
+    "29:1",  # KEY_LEFTCTRL down
+    "47:1",  # KEY_V down
+    "47:0",  # KEY_V up
+    "29:0",  # KEY_LEFTCTRL up
 ]
 
 
@@ -86,7 +93,58 @@ def run_ydotool(args: list[str]) -> None:
 
 def type_text(text: str, key_delay_ms: int = DEFAULT_KEY_DELAY_MS) -> None:
     run_ydotool(["key", *KEY_UP_EVENTS])
+
+    if paste_text(text):
+        return
+
     run_ydotool(["type", "--key-delay", str(key_delay_ms), "--", text])
+
+
+def paste_text(text: str) -> bool:
+    wl_copy_path = shutil.which("wl-copy")
+    wl_paste_path = shutil.which("wl-paste")
+    if not wl_copy_path or not wl_paste_path:
+        return False
+
+    try:
+        previous_clipboard = read_clipboard_text(wl_paste_path)
+
+        subprocess.run(
+            [wl_copy_path],
+            input=text,
+            check=True,
+            text=True,
+        )
+
+        run_ydotool(["key", *PASTE_KEY_EVENTS])
+        time.sleep(PASTE_SETTLE_SECONDS)
+
+        if previous_clipboard is not None:
+            subprocess.run(
+                [wl_copy_path],
+                input=previous_clipboard,
+                check=True,
+                text=True,
+            )
+    except Exception:
+        logging.exception("Clipboard paste failed; falling back to ydotool typing")
+        return False
+
+    return True
+
+
+def read_clipboard_text(wl_paste_path: str) -> str | None:
+    result = subprocess.run(
+        [wl_paste_path, "--no-newline"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    if result.returncode != 0:
+        return None
+
+    return result.stdout
 
 
 def main() -> int:

@@ -16,8 +16,10 @@ Wayland does not allow normal applications to inject keyboard input into other a
 Install `ydotool` before testing text insertion:
 
 ```bash
-sudo dnf install ydotool
+sudo dnf install ydotool wl-clipboard
 ```
+
+`wl-clipboard` is used to paste transcripts in one chunk with `wl-copy` and `Ctrl+V`. If it is missing or fails, the helper falls back to slower character-by-character typing through `ydotool`.
 
 This project includes a development helper that creates and starts a system service for `ydotoold`:
 
